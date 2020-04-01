@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="1b1ac741-ee13-47b0-b78c-bcdf79980470" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="dataweaveexamplesFlow" doc:id="f5a7e114-2997-49e4-b1ac-e91dd84ac54d" >
+		<http:listener doc:name="Listener" doc:id="09205df9-9de1-4617-abfd-4ff12453d876" config-ref="HTTP_Listener_config" path="/dataweaveMapObject"/>
+		<ee:transform doc:name="Transform Message" doc:id="94da33e0-be8b-45b6-8cd5-c0fc1b299d0f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+items: payload.cars map ((dataSampleValue,dataSampleIndex)->
+	car:dataSampleValue mapObject (value,key)->
+	{
+		(upper (key)) :(upper (value))  
+	}
+)]]></ee:set-payload>
+				<ee:set-attributes ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-attributes>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="4bfcd61f-0345-452e-a519-83f74d89ac80" message="in the logger"/>
+	</flow>
+	<flow name="dataweaveexamplesFlow1" doc:id="cb2ca88d-389e-442c-a7b7-1bb70e328fc7" >
+		<http:listener doc:name="Listener" doc:id="b6a482eb-93c3-437f-ab76-a7558e064da4" config-ref="HTTP_Listener_config" path="/dataweaveMap"/>
+		<ee:transform doc:name="Transform Message" doc:id="87bdeb9c-54ab-4eed-867b-83140b50496c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+items: payload.books map ((item, index) -> {
+      category: "book",
+      price: item.price as Number,
+      id: index,
+      properties: {
+        title: item.title,
+        author: item.author,
+        year: item.year as Number
+      }
+   }
+)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dataweaveexamplesFlow2" doc:id="ac96d74d-9dcc-45af-a7f6-ddcc3ee1968f" >
+		<http:listener doc:name="Listener" doc:id="98f3c1d8-88c5-4058-83e1-0d6b9f208d48" config-ref="HTTP_Listener_config" path="/dataweaveFlatten"/>
+		<ee:transform doc:name="Transform Message" doc:id="78d45d41-cc6d-4908-922f-113889a6f1c7" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var myData = [{name:1},{name:2},{name:3}]
+fun myExternalFunction(data): Array =
+    if(data.name == 1)
+        []
+    else if(data.name == 2)
+        [{name: 3}, {name:5}]
+    else
+        [data]
+---
+//flatten(myData map ((item, index) -> myExternalFunction(item)))
+myData flatMap ((item, index) -> myExternalFunction(item))]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dataweaveexamplesFlow3" doc:id="d7cb1855-4e6f-4c3e-ac20-264df5ff0ca5" >
+		<http:listener doc:name="Listener" doc:id="8d231bf3-f384-43c3-825d-f28f796a835d" config-ref="HTTP_Listener_config" path="/dataweaveJoinBy"/>
+		<ee:transform doc:name="Transform Message" doc:id="fbab7419-985f-467a-89c3-b5a98cfa018b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+
+{ "hyphenate" : ["a","b","c"] joinBy "-" }
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dataweaveexamplesFlow4" doc:id="63bd20c5-f39f-469a-8e1f-7ae0c57c42f1" >
+		<http:listener doc:name="Listener" doc:id="0ce29a20-2a9f-4d52-8b52-b1916beb89d4" config-ref="HTTP_Listener_config" path="/dataweaveDates"/>
+		<ee:transform doc:name="Transform Message" doc:id="4c3802fb-e98a-4f86-b852-1a6358ed609c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+import * from dw::core::Strings
+output application/json
+
+fun normalize(date) = date replace "/" with "-" replace "." with "-"
+---
+{
+"normalized_date": normalize(payload.a),
+"charCodeAt": charCodeAt(payload.a,1)
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
